@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aishang.manager.mapper.OrderMapper">
+
+    <resultMap id="orderMap" type="OrderExt">
+        <id column="oid" property="oid"/>
+        <result column="order_number" property="orderNumber"/>
+        <result column="total" property="total"/>
+        <result column="aid" property="aid"/>
+        <result column="date" property="date"/>
+        <result column="pay_id" property="payID"/>
+        <result column="uid" property="uid"/>
+        <result column="state" property="state"/>
+        <association property="user" javaType="User">
+            <id column="uid" property="uid"/>
+            <result column="username" property="userName"/>
+        </association>
+        <association property="address" javaType="Address">
+            <id column="aid" property="aid"/>
+            <result column="name" property="name"/>
+            <result column="tel" property="tel"/>
+            <result column="addr" property="addr"/>
+        </association>
+        <collection property="orderItemExtsList" ofType="OrderItemExt">
+            <id column="order_item_id" property="orderItemID"/>
+            <result column="pid" property="pid"/>
+            <result column="count" property="count"/>
+            <result column="sub_total" property="subTotal"/>
+            <result column="oid" property="oid"/>
+            <result column="orderItemDate" property="orderItemDate"/>
+            <association property="product" javaType="Product">
+                <id column="pid" property="pid"/>
+                <result column="pname" property="pName"/>
+                <result column="market_price" property="marketPrice"/>
+                <result column="shop_price" property="shopPrice"/>
+                <result column="stock" property="stock"/>
+            </association>
+        </collection>
+    </resultMap>
+
+    <!--复合查询语句-->
+    <sql id="selSql">
+        <where>
+            <if test="selectState!=null and selectState!=-1">
+                and orders.state=#{selectState}
+            </if>
+            <if test="selectOrderNumber!=null and selectOrderNumber!=''">
+                and order_number=#{selectOrderNumber}
+            </if>
+            <if test="selectUserName!=null and selectUserName!=''">
+                and user.username=#{selectUserName}
+            </if>
+            <if test="selectTel!=null and selectTel!=''">
+                and address.tel=#{selectTel}
+            </if>
+        </where>
+    </sql>
+    
+    <!--复合查询order分页-->
+    <select id="getOrderPageBeanList" parameterType="OrderBean" resultMap="orderMap">
+        select orders.oid,order_number,total,orders.state,orders.date,
+            address.aid,address.name,address.tel,address.addr,
+            user.username,user.uid,
+            order_item_id,order_item.pid,order_item.count,sub_total,order_item.oid,order_item_date,
+            product.pname,product.market_price,product.shop_price,product.pid,product.stock
+        from orders,user,address,order_item,product
+        <where>
+            orders.uid = user.uid
+            and orders.aid=address.aid
+            and orders.oid=order_item.oid
+            and product.pid=order_item.pid
+            <if test="selectState!=null and selectState!=-1">
+                and orders.state=#{selectState}
+            </if>
+            <if test="selectOrderNumber!=null and selectOrderNumber!=''">
+                and order_number=#{selectOrderNumber}
+            </if>
+            <if test="selectUserName!=null and selectUserName!=''">
+                and user.username=#{selectUserName}
+            </if>
+            <if test="selectTel!=null and selectTel!=''">
+                and address.tel=#{selectTel}
+            </if>
+        </where>
+        order by orders.state ,orders.date desc
+        limit #{startIndex},#{pageSize}
+    </select>
+    <!--&lt;!&ndash;复合查询order分页&ndash;&gt;
+    <select id="getOrderPageBeanList" parameterType="OrderBean" resultMap="orderMap">
+        select orders.oid,order_number,total,orders.state,orders.date,
+            address.aid,address.name,address.tel,address.addr,
+            user.username,user.uid
+        from orders
+        inner join user
+        on orders.uid = user.uid
+        inner join address
+        on orders.aid=address.aid
+        <include refid="selSql"></include>
+        order by orders.state ,orders.date desc
+        limit #{startIndex},#{pageSize}
+    </select>-->
+
+    <!--获取复合查询订单总数-->
+    <select id="getTotalCount" parameterType="OrderBean" resultType="Integer">
+        select count(0)
+        from orders
+        inner join user
+        on orders.uid = user.uid
+        inner join address
+        on orders.aid=address.aid
+        <include refid="selSql"></include>
+    </select>
+
+    <update id="changeState" parameterType="Order">
+        update orders set state=#{state} where oid=#{oid}
+    </update>
+</mapper>

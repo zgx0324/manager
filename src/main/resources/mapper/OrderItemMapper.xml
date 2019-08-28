@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aishang.manager.mapper.OrderItemMapper">
+    <resultMap id="orderItemExtsList" type="OrderItemExt">
+        <id column="order_item_id" property="orderItemID"/>
+        <result column="pid" property="pid"/>
+        <result column="count" property="count"/>
+        <result column="sub_total" property="subTotal"/>
+        <result column="oid" property="oid"/>
+        <result column="orderItemDate" property="orderItemDate"/>
+        <association property="product" javaType="Product">
+            <id column="pid" property="pid"/>
+            <result column="pname" property="pName"/>
+            <result column="market_price" property="marketPrice"/>
+            <result column="shop_price" property="shopPrice"/>
+            <result column="stock" property="stock"/>
+        </association>
+    </resultMap>
+
+    <!-- 根据订单ID查询订单项集合-->
+    <select id="getOrderitemListByOid" resultMap="orderItemExtsList" parameterType="Integer">
+        select order_item_id,order_item.pid,order_item.count,sub_total,oid,order_item_date,
+              product.pname,product.market_price,product.shop_price,product.pid,product.stock
+        from order_item
+        inner join product
+        on product.pid=order_item.pid
+        where oid=#{oid}
+    </select>
+
+
+
+</mapper>

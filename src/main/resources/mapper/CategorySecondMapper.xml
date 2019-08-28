@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aishang.manager.mapper.CategorySecondMapper">
+
+    <resultMap id="categorySecondExtMap" type="CategorySecondExt">
+        <id column="csid" property="csid"/>
+        <result column="csname" property="csname"/>
+        <result column="cid" property="cid"/>
+        <collection property="categoryThirdList" ofType="CategoryThird">
+            <id column="ctid" property="ctid"/>
+            <result column="ctname" property="ctname"/>
+            <result column="csid" property="csid"/>
+        </collection>
+    </resultMap>
+
+    <!--根据cid查找categorySecondExtMap类目集合-->
+    <select id="findAllByCid" resultMap="categorySecondExtMap" parameterType="Integer">
+         select * from category_second inner join category_third on category_second.csid = category_third.csid where cid=#{cid}
+    </select>
+
+    <!--根据cid查找二级类目集合-->
+    <select id="getSecondCategoryByCid" parameterType="Integer" resultType="categorySecond">
+        select * from category_second where cid=#{cid} order by state desc
+    </select>
+
+    <!--添加-->
+    <insert id="add" parameterType="CategorySecond" keyColumn="csid" keyProperty="csid" useGeneratedKeys="true">
+        insert into category_second values (default,#{csname},#{state},#{cid})
+    </insert>
+
+    <!--修改-->
+    <update id="update" parameterType="CategorySecond">
+        update category_second set csname=#{csname},state=#{state} where csid=#{csid}
+    </update>
+    <!--删除-->
+    <delete id="del" parameterType="Integer">
+        delete from category_second where csid=#{csid}
+    </delete>
+
+    <!--验证二级类目名为？的二级类目数量-->
+    <select id="checkCsname" parameterType="String" resultType="Integer">
+        select count(0) from category_second where csname=#{csname}
+    </select>
+
+    <!--根据二级类目id查询二级类目对象-->
+    <select id="getCategorySecondByCsid" parameterType="Integer" resultType="CategorySecond">
+        select * from category_second where csid=#{csid}
+    </select>
+</mapper>

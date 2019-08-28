@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aishang.manager.mapper.ProductMapper">
+
+    <!--商品，一级类目，二级类目，三级类目多表联合查询语句-->
+    <sql id="selectProductByCategory">
+        select pid,pname as pName,market_price as marketPrice,shop_price as shopPrice,stock,is_hot as isHot,date,product.ctid as ctid
+            from product
+            inner join category_third
+            on product.ctid=category_third.ctid
+            inner join category_second
+            on category_second.csid=category_third.csid
+            inner join category
+            on category.cid=category_second.cid
+    </sql>
+
+    <!--根据用户id查询用户信息-->
+    <select id="getProductByID" resultType="Product" parameterType="Integer" >
+         select pid,pname as pName,market_price as marketPrice,shop_price as shopPrice,ctid,stock,is_hot as isHot,img_path as imgPath,
+                date,content
+         from product
+         where pid=#{pid}
+    </select>
+    <!--根据用户id查询用户ProductExt信息-->
+    <select id="getProductBeanByID"  resultType="ProductExt" parameterType="Integer">
+         select pid,pname as pName,market_price as marketPrice,shop_price as shopPrice,stock,is_hot as isHot,date,product.ctid as ctid,
+                category_second.csid as csid,category.cid as cid,content,img_path as imgPath
+            from product
+            inner join category_third
+            on product.ctid=category_third.ctid
+            inner join category_second
+            on category_second.csid=category_third.csid
+            inner join category
+            on category.cid=category_second.cid
+            where pid=#{pid}
+    </select>
+
+    <!--根据一级类目查询最新上架的商品-->
+    <select id="getNewProduct" resultType="Product" parameterType="Integer" >
+            select pid,pname as pName,market_price as marketPrice,shop_price as shopPrice,stock,is_hot as isHot,date,product.ctid as ctid
+            from product
+            inner join category_third
+            on product.ctid=category_third.ctid
+            inner join category_second
+            on category_second.csid=category_third.csid
+            inner join category
+            on category.cid=category_second.cid
+            where category.cid=#{0}
+            order by date desc
+            limit #{1},#{2}
+    </select>
+
+    <!--获取该类目下推荐商品集合-->
+    <select id="getIsHotList" resultType="Product" parameterType="ProductBean" >
+            <include refid="selectProductByCategory"></include>
+            <where>
+                <if test="selectCid!=null and selectCid!=''">
+                    and category.cid=#{selectCid}
+                </if>
+                <if test="selectCsid!=null and selectCsid!=''">
+                    and category_third.csid=#{selectCsid}
+                </if>
+                <if test="selectCtid!=null and selectCtid!=''">
+                    and product.ctid=#{selectCtid}
+                </if>
+                <if test="selectpName!=null and selectpName!=''">
+                    and pname like "%${selectpName}%"
+                </if>
+                and is_hot=1
+            </where>
+    </select>
+
+    <!--获取该类目下商品集合-->
+    <select id="getProductList" resultType="Product" parameterType="ProductBean" >
+        <include refid="selectProductByCategory"></include>
+        <where>
+            <if test="selectCid!=null and selectCid!='' and selectCid!=-1">
+                and category.cid=#{selectCid}
+            </if>
+            <if test="selectCsid!=null and selectCsid!='' and selectCsid!=-1">
+                and category_third.csid=#{selectCsid}
+            </if>
+            <if test="selectCtid!=null and selectCtid!='' and selectCtid!=-1">
+                and product.ctid=#{selectCtid}
+            </if>
+            <if test="selectpName!=null and selectpName!=''">
+                and pname like "%${selectpName}%"
+            </if>
+            <if test="selectMinPrice!=null and selectMinPrice!=''">
+                and market_price &gt;= #{selectMinPrice}
+            </if>
+            <if test="selectMaxPrice!=null and selectMaxPrice!=''">
+                and market_price &lt;= #{selectMaxPrice}
+            </if>
+        </where>
+        order by isHot desc ,date desc
+        limit #{startIndex},#{pageSize}
+    </select>
+
+    <!--获取该类目下商品集合的总数totalCount-->
+    <select id="getToTalCount" parameterType="ProductBean" resultType="Integer">
+        select count(0)
+        from product
+        inner join category_third
+        on product.ctid=category_third.ctid
+        inner join category_second
+        on category_second.csid=category_third.csid
+        inner join category
+        on category.cid=category_second.cid
+        <where>
+            <if test="selectCid!=null and selectCid!='' and selectCid!=-1">
+                and category.cid=#{selectCid}
+            </if>
+            <if test="selectCsid!=null and selectCsid!='' and selectCsid!=-1">
+                and category_third.csid=#{selectCsid}
+            </if>
+            <if test="selectCtid!=null and selectCtid!='' and selectCtid!=-1">
+                and product.ctid=#{selectCtid}
+            </if>
+            <if test="selectpName!=null and selectpName!=''">
+                and pname like "%${selectpName}%"
+            </if>
+            <if test="selectMinPrice!=null and selectMinPrice!=''">
+                and market_price &gt;= #{selectMinPrice}
+            </if>
+            <if test="selectMaxPrice!=null and selectMaxPrice!=''">
+                and market_price &lt;= #{selectMaxPrice}
+            </if>
+        </where>
+    </select>
+
+    <!--下单成功更改库存-->
+    <update id="updateStock" parameterType="OrderItemExt">
+        update product set stock=stock-#{count} where pid=#{pid}
+    </update>
+    <!--修改商品热门-->
+    <update id="updateIsHot" parameterType="Product">
+          update product set is_hot=#{isHot} where pid=#{pid}
+    </update>
+    <!--修改商品信息-->
+    <update id="update" parameterType="ProductExt">
+        update product set
+        pname=#{pName},ctid=#{ctid},market_price=#{marketPrice},shop_price=#{shopPrice},content=#{content},stock=#{stock},img_path=#{imgPath}
+        where pid=#{pid}
+    </update>
+
+
+    <update id="delImgPath" parameterType="Product">
+        update product set
+        img_path= null
+        where pid=#{pid}
+    </update>
+
+    <insert id="add" parameterType="ProductExt" keyColumn="pid" keyProperty="pid" useGeneratedKeys="true">
+        insert into product (pname,pdesc,date,ctid,market_price,shop_price,content,stock,is_hot,img_path)
+         values (#{pName},#{pDesc},#{date},#{ctid},#{marketPrice},#{shopPrice},#{content},#{stock},#{isHot},#{imgPath})
+    </insert>
+
+    <delete id="del" parameterType="Integer">
+        delete from product where pid=#{pid}
+    </delete>
+
+    <select id="getCountByCtid" parameterType="Integer" resultType="Integer">
+        select count(0) from product where ctid=#{ctid}
+    </select>
+</mapper>

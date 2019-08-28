@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aishang.manager.mapper.UserMapper">
+    <!--分页获取用户集合-->
+    <select id="getUserList" parameterType="UserBean" resultType="User">
+         SELECT uid,username as userName,password as passWord,date,name,tel,email,icon_path as iconPath,sex,age,state
+         from user
+        <where>
+            <if test="sState!=null and sState!=-1">
+                and state=#{sState}
+            </if>
+            <if test="sUserName!=null and sUserName!=''">
+                and username like "%${sUserName}%"
+            </if>
+        </where>
+        order by state desc
+        limit #{startIndex},#{pageSize}
+    </select>
+
+    <!--获取分页用户集合的总数-->
+    <select id="getTotalCount" parameterType="UserBean" resultType="Integer">
+         SELECT count(0)
+         from user
+        <where>
+            <if test="sState!=null and sState!=-1">
+                and state=#{sState}
+            </if>
+            <if test="sUserName!=null and sUserName!=''">
+                and username like "%${sUserName}%"
+            </if>
+        </where>
+    </select>
+
+    <!--冻结与解冻账户-->
+    <update id="frozenUser" parameterType="User">
+        update user set state=#{state} where uid=#{uid}
+    </update>
+
+</mapper>
